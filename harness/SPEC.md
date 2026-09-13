@@ -72,4 +72,4 @@ skill 写入时引用四个具名去向，映射集中定义在这里，不在�
 
 ## 安装到新项目
 
-复制 `template/.harness/` → `AGENTS.md` 追加 `template/AGENTS.snippet.md` → `.gitignore` 加 `.harness/local/`。
+复制 `template/.harness/` → `AGENTS.md` 追加 `template/AGENTS.snippet.md` → `.gitignore` 加 `.harness/local/` → `spec/index.md` 登记初始路由。可粘贴的 agent 安装 prompt 见仓库 README。

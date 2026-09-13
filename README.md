@@ -39,13 +39,38 @@
 
 ## 使用
 
-栽入 `.harness/`：
+### 栽入 `.harness/`
 
-1. 复制 `harness/template/.harness/` 到项目根
-2. `AGENTS.md` 追加 `harness/template/AGENTS.snippet.md` 的内容
-3. `.gitignore` 加一行 `.harness/local/`
+把下面这段贴给目标项目里的 agent，让它完成安装：
 
-装单个 skill：复制对应目录到宿主 skill 目录（`~/.agents/skills/`、`~/.claude/skills/` 等）。
+```text
+把 .harness/ 状态层装进当前仓库（规范全文见 clone 后的 harness/SPEC.md）：
+
+1. `git clone --depth 1 https://github.com/gaoyu06/harness /tmp/harness-src`
+2. 复制 `/tmp/harness-src/harness/template/.harness/` 到仓库根
+3. 把 `/tmp/harness-src/harness/template/AGENTS.snippet.md` 全文追加到 `AGENTS.md`（不存在则新建；规则入口为其他文件时追加到该文件）
+4. `.gitignore` 加一行 `.harness/local/`
+5. 按仓库结构在 `.harness/spec/index.md` 登记初始路由行（"改什么之前 | 读什么"），暂无可写则留空表
+6. 删除 `/tmp/harness-src`，汇报装了什么
+
+仓库已有 `.harness/` 或 AGENTS.md 已含该序言时，停下汇报，不重复安装。
+```
+
+手动安装：
+
+```bash
+git clone --depth 1 https://github.com/gaoyu06/harness /tmp/harness-src
+cp -R /tmp/harness-src/harness/template/.harness .
+cat /tmp/harness-src/harness/template/AGENTS.snippet.md >> AGENTS.md
+echo '.harness/local/' >> .gitignore
+rm -rf /tmp/harness-src
+```
+
+装完按项目结构在 `.harness/spec/index.md` 登记路由行（"改什么之前 | 读什么"）。
+
+### 装单个 skill
+
+复制对应目录到宿主 skill 目录（`~/.agents/skills/`、`~/.claude/skills/` 等）。
 
 ## 原则
 
