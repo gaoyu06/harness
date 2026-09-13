@@ -1,89 +1,89 @@
-# 审查强度
+# Strengths
 
-五档的差别在于：审查者数量、审查范围、能否换模型、是否二轮裁决，以及**轮次预算**。所有档位都用当前宿主的只读原生子代理，不调外部 CLI。
+The five tiers differ on: reviewer count, scope, whether the model can be swapped, second-round adjudication, and the **round budget**. All tiers use the current host's read-only native subagents; no external CLIs.
 
-**预算是硬约束。** 每档都有轮次上限；用尽仍有未决 P0/P1 时停下来交给用户决策，不得自行加轮。子代理的 finding 数量也有上限——目的是压缩主会话的裁决时间，不是压缩审查深度。
+**The budget is a hard constraint.** Each tier caps rounds. Hitting the cap with open P0/P1 means stop and hand the decision to the user, never self-extend. Findings per reviewer are also capped: the point is compressing the main session's adjudication time, not compressing review depth.
 
 ## Self
 
-**用途**：触发边界模糊、单模块、有测试兜底。不起子代理。
+**For**: ambiguous triggers, single module, test cover. No subagents.
 
-主会话自己按清单过一遍 diff，逐条给结论，写进汇报：
+The main session walks the diff against this checklist and answers each item in the delivery report:
 
-1. 需求是否被真正满足（对着验收条件念一遍）。
-2. 空值 / 空集合 / 越界 / 重复提交这四类输入走到新代码会怎样。
-3. 错误路径：抛错、超时、外部调用失败时的状态是否自洽。
-4. 有没有改到既有链路的行为而自己没意识到。
-5. 遗留的调试代码、写死的值、注释掉的旧逻辑。
+1. Is the requirement actually met (read it against the acceptance criteria).
+2. What do null / empty / out-of-range / double-submit inputs do to the new code.
+3. Error paths: is state self-consistent on throw, timeout, external-call failure.
+4. Did the change alter an existing path's behavior without you noticing.
+5. Leftover debug code, hardcoded values, commented-out old logic.
 
-任一条答不上来 → 抬到 Low，起子代理。
+Any item you cannot answer: escalate to Low, spawn a subagent.
 
-**预算**：0 轮子代理审查。
+**Budget**: 0 subagent rounds.
 
 ## Low
 
-**用途**：默认档。局部改动，影响面清楚。
+**For**: the default tier. Local change, clear blast radius.
 
-- 1 个隔离子代理。只给 diff 和需求，不给开发过程的推理。
-- 范围：**diff hunk 及其前后上下文 + 直接调用方**。不要求通读每个改动文件全文。
-- 必查：需求是否被真正满足、明显逻辑错误、错误处理缺失、命名与既有风格冲突、遗留的调试代码。
-- 不重跑测试，信任开发阶段的自测结果。
-- 同源可接受：Low 的影响面下，隔离锚定就够。
-- finding 上限 8 条，**不报 P3**。
+- 1 isolated subagent. Gets the diff and the requirement, none of your development reasoning.
+- Scope: **diff hunks plus their immediate context and direct callers**. No full-file read-through.
+- Must check: requirement actually met, obvious logic errors, missing error handling, naming that clashes with existing style, leftover debug code.
+- Does not re-run tests; trusts development-phase self-verification.
+- Same-source acceptable: at Low's blast radius, isolation alone removes anchoring.
+- Max 8 findings, **no P3s**.
 
-**预算**：1 轮。P0 修复后做一次范围仅限修复 diff 的轻复审；P1 由主会话代码级复核，不另起子代理。
+**Budget**: 1 round. After a P0 fix, one light re-review of the fix diff only; P1s get a main-session code re-check, no extra subagent.
 
 ## Medium
 
-**用途**：跨模块，有一定回归面。
+**For**: cross-module, some regression surface.
 
-- 1 个隔离子代理，空白上下文。不得在本会话里自己审自己。
-- 范围：diff + 被改动函数所在文件的相关部分 + 主要调用方。整文件通读只在改动占比高时才做。
-- 必查：Low 的全部，加边界条件（空值、空集合、越界、并发重入）、错误路径、向后兼容、新增依赖的必要性。
-- 主会话的测试与构建**与审查并行**跑，结果并入裁决材料；不要先跑完再起审查。
-- 能换模型就换；不能则同源隔离，结论里写明。
-- finding 上限 10 条，**不报 P3**。
+- 1 isolated subagent, blank context. No self-review inside the session.
+- Scope: diff plus relevant parts of touched files plus main callers. Full-file reads only when the change dominates the file.
+- Must check: all of Low's, plus boundary conditions (null, empty, out-of-range, concurrent re-entry), error paths, backward compatibility, whether new dependencies earn their place.
+- Main-session tests and build run **in parallel** with review and feed adjudication; do not finish them first.
+- Swap the model if you can; else same-source isolation, declared in the conclusion.
+- Max 10 findings, **no P3s**.
 
-**预算**：1 轮 + 最多 1 次针对修复 diff 的复审。
+**Budget**: 1 round + at most 1 fix-diff re-review.
 
 ## High
 
-**用途**：核心链路、数据结构变更、并发或事务、对外接口。
+**For**: core paths, data-structure changes, concurrency or transactions, external interfaces.
 
-- 2 个审查者，并行、互不可见。能选不同模型就选；不能就两个隔离的同源子代理，结论写 `同源隔离，未跨厂商`。
-- 范围：Medium 的全部，加受影响的数据流上下游、迁移与回滚路径、既有测试是否覆盖新行为。
-- 必查追加项：
-  - 并发与事务：竞态、锁粒度、幂等、部分失败后的状态。
-  - 数据：迁移可回滚性、空表与脏数据、索引与查询计划变化。
-  - 接口：兼容性、错误码、超时与重试语义。
-  - 安全：鉴权与越权、输入校验、注入、敏感信息泄露到日志。
-  - 性能：新增的 N+1、全表扫描、无界内存增长。
-- 主会话在审查期间并行跑完整测试与 lint，结果并入裁决材料。
-- 收敛：两份报告合并，冲突项由主会话读代码定夺，无法定夺的追加一次针对性提问。
-- finding 上限 12 条，P3 单列不展开。
+- 2 reviewers, parallel, blind to each other. Prefer different models; else two isolated same-source subagents, with `same-source isolation, no cross-vendor` in the conclusion.
+- Scope: all of Medium's, plus affected data flow up/downstream, migration and rollback paths, whether existing tests cover the new behavior.
+- Additional must-checks:
+  - Concurrency and transactions: races, lock granularity, idempotency, state after partial failure.
+  - Data: migration reversibility, empty tables and dirty data, index and query-plan shifts.
+  - Interfaces: compatibility, error codes, timeout and retry semantics.
+  - Security: authz and privilege escalation, input validation, injection, secrets leaking to logs.
+  - Performance: new N+1s, full scans, unbounded memory growth.
+- The main session runs the full test suite and lint in parallel with review; results feed adjudication.
+- Convergence: merge both reports; conflicts settled by the main session reading code; unresolvable items get one targeted follow-up question.
+- Max 12 findings, P3s as a single line, unexpanded.
 
-**预算**：2 轮（首轮 + 修复复审）。
+**Budget**: 2 rounds (first pass + fix re-review).
 
 ## Heavy
 
-**用途**：生产数据迁移、资金与权限、不可回滚操作、大规模重构。
+**For**: production data migration, money or permissions, irreversible operations, large-scale refactor.
 
-- **≥ 3 个审查者**，并行、互相隔离、各自独立形成结论。能跨厂商/跨模型就跨；宿主做不到时仍拉 3 个隔离子代理，结论必须写 `同源隔离，未跨厂商`，不得声称做了跨厂商 Heavy。
-- 推理档用宿主能给的最高档。
-- 每个审查者被要求：给出至少一条最可能出问题的场景，即使没找到确定缺陷也要给出风险排序，禁止只回"没问题"就收工。
-- 范围：High 的全部，加部署顺序、灰度与回滚预案、监控与告警是否能发现该改动引发的故障、数据一致性在失败中断点的表现。
-- **第二轮交叉裁决（Heavy 独有）**：合并全部 findings 后，交给一个**未产出该 finding** 的隔离子代理逐条判定 confirmed / false-positive / unproven（`assets/adjudication-prompt.md`）。两个子代理判定相反的条目，能换模型就换一个定夺；仍无定论的，主会话读代码给出最终结论并在汇报里标注争议。
-- 收敛门槛：所有 confirmed 的 P0/P1 必须修复；unproven 的 P0/P1 必须由主会话给出"为什么不成立"的代码级依据，不能以"未复现"带过。
-- 修复后必须复审，最低 High，且换一个本轮未参与的子代理。
+- **>= 3 reviewers**, parallel, isolated, each forming conclusions independently. Cross vendor/model where possible; if the host cannot, still run 3 isolated subagents and the conclusion must say `same-source isolation, no cross-vendor`. Never claim a cross-vendor Heavy.
+- Highest reasoning tier the host offers.
+- Each reviewer must name at least one most-likely failure scenario and rank risks even with no confirmed defect. A bare "looks fine" is not an acceptable report.
+- Scope: all of High's, plus deploy ordering, rollout and rollback plans, whether monitoring and alerts would catch a failure this change causes, data consistency at failure breakpoints.
+- **Second-round cross-adjudication (Heavy only)**: after merging all findings, an isolated subagent that **did not produce the finding** rules each confirmed / false-positive / unproven (`assets/adjudication-prompt.md`). Where two subagents disagree, swap models for the decider if possible; still unresolved, the main session reads code, rules finally, and marks the item disputed.
+- Convergence bar: every confirmed P0/P1 must be fixed; every unproven P0/P1 needs a code-level "why it cannot happen" from the main session. "Could not reproduce" does not count.
+- Re-review after fixes is mandatory, minimum High, and must use a subagent that sat out this round.
 
-**预算**：2 轮 + 1 次裁决。超出仍有未决 P0/P1 → 交用户决策。
+**Budget**: 2 rounds + 1 adjudication. Over budget with open P0/P1: the user decides.
 
-## 档位对照
+## Tier table
 
-| | 审查者 | 审查范围 | 换模型 | 重跑验证 | 二轮裁决 | 轮次预算 |
+| | Reviewers | Scope | Model swap | Re-verify | 2nd-round adjudication | Round budget |
 | --- | --- | --- | --- | --- | --- | --- |
-| Self | 0（主会话自查） | diff | — | 否 | 否 | 0 |
-| Low | 1（隔离） | diff + 直接调用方 | 可选 | 否 | 否 | 1 |
-| Medium | 1（隔离） | + 相关文件与主要调用方 | 能换则换 | 并行 | 否 | 1 + 1 复审 |
-| High | 2（互不可见） | + 数据流上下游、回滚路径 | 能换则换 | 并行（完整） | 冲突项主会话定夺 | 2 |
-| Heavy | ≥3（互不可见） | + 部署、监控、一致性 | 能跨则跨，不能则写明 | 并行（完整） | 是（换一个未参与的子代理） | 2 + 裁决 |
+| Self | 0 (main session) | diff | n/a | no | no | 0 |
+| Low | 1 (isolated) | diff + direct callers | optional | no | no | 1 |
+| Medium | 1 (isolated) | + relevant files, main callers | swap if possible | parallel | no | 1 + 1 re-review |
+| High | 2 (mutually blind) | + data flow, rollback paths | swap if possible | parallel (full) | conflicts ruled by main session | 2 |
+| Heavy | >=3 (mutually blind) | + deploy, monitoring, consistency | cross-vendor if possible, else declared | parallel (full) | yes (a subagent that sat out) | 2 + adjudication |

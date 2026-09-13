@@ -1,83 +1,87 @@
-# 裁决与收敛
+# Adjudication and convergence
 
-审查报告是输入，不是结论。主会话负责把多份报告变成一份可执行的结论。
+Review reports are input, not verdicts. The main session turns N reports into one executable conclusion.
 
-## 1. 合并
+## 1. Merge
 
-按 `文件:行` 归并同一处问题的重复报告，记录每条 finding 由哪些审查者提出。多个模型独立指向同一处，是强信号；只有一个模型提出，不因此降权，但需要更硬的验证。
+Group duplicate reports by `file:line`, recording which reviewers raised each. Several models independently pointing at the same spot is a strong signal; a single-model finding is not downgraded for that, but needs harder verification.
 
-## 2. 逐条判定
+Requirement-conformance items dedupe by requirement line, not by `file:line`; judgement-call smells dedupe by smell name plus location. Both stay out of the finding merge: they are separate axes, and merging them into the severity ranking is exactly the masking the axes exist to prevent.
 
-对每条 finding 回到代码验证，给出三种状态之一：
+## 2. Judge each finding
 
-- `confirmed`：能在代码里指出触发路径。写清楚触发条件。
-- `false-positive`：代码或上下文不支持该结论。写清楚它错在哪（读漏了哪段、假设了什么不存在的调用）。
-- `unproven`：无法证实也无法证伪。默认按存在处理，除非能给出代码级依据说明不成立。
+Verify every finding against the code and assign one of three states:
 
-禁止"看起来像问题就照单收下"，也禁止"不想改就判误报"。判定依据必须是代码，不是模型的措辞强度。
+- `confirmed`: you can point at a trigger path in code. Write the trigger condition.
+- `false-positive`: code or context does not support the claim. Write what the report got wrong (what it failed to read, what call it assumed that does not exist).
+- `unproven`: cannot confirm or refute. Default to treating it as real unless you can give code-level grounds it cannot hold.
 
-Heavy 档的二轮裁决由未产出该 finding 的隔离子代理先做一遍（`assets/adjudication-prompt.md`），主会话在其结论基础上复核，冲突项换一个未参与的子代理定夺。
+Bans: accepting a finding because it sounds like a problem, and dismissing one because you do not want to fix it. The basis is code, not the model's rhetoric.
 
-## 2.1 准入过滤（判定前先做）
+In Heavy, second-round adjudication is done first by an isolated subagent that did not produce the finding (`assets/adjudication-prompt.md`); the main session re-checks on top, and contested items go to a subagent that sat out the round.
 
-按 `references/taste.md` 第 1 节先把不构成 finding 的条目剔掉，再进入真伪判定。元代码（测试、守卫、lint、脚本）的问题一律封顶 P2。不要把审查者的措辞强度当严重度。
+## 2.1 Admission filter (before judging)
 
-## 3. 定级
+Strip non-findings per `references/taste.md` section 1 first, then judge the rest. Meta-code problems (tests, guards, lint, scripts) cap at P2. Never read severity from a reviewer's tone.
 
-- `P0`：数据损坏、资金或权限错误、生产不可用、安全漏洞。
-- `P1`：核心路径功能错误、明确的回归、可被正常操作触发的崩溃。
-- `P2`：边界条件错误、错误处理缺失、性能明显退化、测试覆盖缺口。
-- `P3`：可维护性、命名、重复代码、非阻塞的风格问题。
+## 3. Severity
 
-## 4. 处置
+- `P0`: data corruption, money or permission errors, production outage, security hole.
+- `P1`: core-path functional error, a definite regression, a crash reachable by normal operation.
+- `P2`: boundary errors, missing error handling, clear performance regression, test-coverage gaps.
+- `P3`: maintainability, naming, duplicated code, non-blocking style.
 
-只有 P0/P1 阻塞交付。P2/P3 不阻塞——把它们塞进当轮会让每个需求都拖长一截，而它们本来可以攒批处理。
+## 4. Disposition
 
-- P0/P1：本轮必须修复。确实不修的，需要用户在本轮明确同意，并把原因写进汇报。
-- P2：只在与本次需求的验收条件直接相关时当轮修。其余记入 backlog（在汇报里列出，不写进仓库），报给用户由他决定何时处理。
-- P3：只列出，不顺手改。
+Only P0/P1 block delivery. P2/P3 do not: forcing them into the round stretches every task, and they batch fine.
 
-修复只针对确认成立的问题，不要顺着报告做无关重构。
+- P0/P1: fix this round. If genuinely not fixed, the user must agree in this round, with the reason in the report.
+- P2: fix this round only when directly tied to acceptance; the rest go to a backlog (listed in the report, not written into the repo) for the user to schedule.
+- P3: listed, not fixed.
 
-**修复的形状**按 `references/taste.md` 第 2 节：删除 > 收窄判据 > 替换实现 > 新增代码。单条修复需要新增 > 30 行或引入新抽象时先停下来问是不是判据本身错了；同一个守卫/判据被打第 2 次补丁即判定设计错误，删掉或换原理，不允许第 3 次补丁。
+Fixes address confirmed problems only; no drive-by refactors along the report.
 
-## 4.1 饱和判定（每轮收敛前必做）
+**Fix shape** per `references/taste.md` section 2: delete > narrow the predicate > swap implementation > add code. A single fix needing >30 new lines or a new abstraction: stop and ask whether the criterion itself is wrong. A guard or predicate patched a second time is a design error: delete it or change the principle. No third patch.
 
-按 `references/taste.md` 第 4 节检查三条停止信号：本轮 finding 指向上一轮新增代码 > 50%、指向元代码 > 50%、连续两轮无新的生产代码 P0/P1。命中任一条：**本次任务的审查到此为止**，剩余项压成清单交用户，不再起新轮次，也不再据此改代码。
+## 4.1 Saturation check (mandatory before each closeout)
 
-饱和不是流程失败，是流程该结束的信号。继续加轮只会用新代码的缺陷率换掉已经很低的边际收益。
+Check the three stop signals per `references/taste.md` section 4: >50% of this round's findings point at code added last round, >50% point at meta-code, or two consecutive rounds with no new production-code P0/P1. Any hit: **review for this task ends here**. Remaining items compress to a one-line-each list for the user; no new rounds, no further edits against them.
 
-## 5. 复审
+Saturation is not process failure; it is the signal the process should end. More rounds trade the defect rate of fresh code against an already-low marginal gain.
 
-复审很贵，只在必要时起：
+## 5. Re-review
 
-- **必须起子代理复审**：存在 P0，或存在跨模块的 P1。范围只覆盖修复 diff 和被修复直接影响的路径，不重审本轮已审过的部分。
-- **不起子代理**：单模块的 P1，由主会话做代码级复核，并补一条覆盖该路径的回归测试；测试通过即可收口。
-- 强度与本轮相同；Heavy 可降为 High，但必须换一个本轮未参与的模型，避免同一模型为自己的判断背书。
-- 复审次数受 `references/strengths.md` 的轮次预算约束。预算用尽仍有未决 P0/P1：停，把未决项、证据、你自己的判断交给用户，由用户决定加轮还是接受风险。不得自动无限加轮。
+Re-review is expensive; spawn it only when needed:
 
-## 5.1 前移
+- **Mandatory subagent re-review**: any P0, or any cross-module P1. Scope covers the fix diff and the paths the fix directly touches; do not re-review what this round already cleared.
+- **No subagent**: a single-module P1 gets a main-session code-level re-check plus a regression test covering the path; green test closes it.
+- Same strength as this round; Heavy may drop to High but must use a model that did not review this round, so no model endorses its own judgement.
+- Re-reviews count against the round budget in `references/strengths.md`. Budget spent with open P0/P1: stop; give the user the open items, the evidence, and your judgement. The user chooses more rounds or accepts the risk. Never auto-extend.
 
-收尾时对每条 confirmed 的 P0/P1 做一件事，二选一或都做：
+## 5.1 Push forward
 
-- 补一条回归测试，让这一类问题下次由测试发现，而不是由审查发现；
-- 或抽象成一行规则，追加到项目 `CLAUDE.md` / `AGENTS.md` 的"复发缺陷清单"，开发前先读。
+At closeout, for each confirmed P0/P1 do one or both:
 
-这是让门禁越用越便宜的唯一机制。如果同一类缺陷每轮都被审出来，说明该修的是开发阶段的输入，而不是继续加审查。连续三轮不再出现的条目可以从清单移除。
+- add a regression test so this class is caught by tests next time, not by review;
+- or distill it into a one-line rule appended to the project's standing rules: `.harness/spec/standards.md` when the project carries `.harness/`, else the `CLAUDE.md` / `AGENTS.md` "recurring defects" list — read before development.
 
-## 6. 汇报格式
+This is the only mechanism that makes the gate cheaper over time. If the same defect class surfaces every round, what needs fixing is the development-phase input, not more review. Three consecutive clean rounds: remove the entry.
 
-给用户的结论按这个顺序，不要贴原始报告全文：
+## 6. Report format
 
-1. 一句话结论：审查强度、参与模型、是否可以交付。
-2. 已修复的问题：`[P?] 一句话 — 文件:行`，附一句修复方式。
-3. 未修复的问题及原因（含用户需要决策的项）。
-4. 误报说明：模型提了但不成立的重要条目，一句话说明为什么不成立。含被准入过滤剔掉的"要求加防御"类条目。
-5. 残留风险与未覆盖面：没测到的场景、依赖外部环境才能验证的部分。
-6. 报告原文路径。
+Report to the user in this order; do not paste raw reports:
 
-汇报要短：每条一行，不贴原文，不复述子代理的措辞。P2 backlog 与 P3 各压成一行清单。
+1. One-line verdict: strength, models involved, ship or not.
+2. Requirement conformance: missing or partial requirements, unrequested behavior, suspect implementations, each quoted against the requirement. Ungraded, unmerged with findings; a delta here goes to the user for a decision, not to a severity.
+3. Fixed: `[P?] one line - file:line`, plus a phrase on the fix.
+4. Unfixed items and why (including anything the user must decide).
+5. False positives: significant findings that did not hold, one line each on why; include items stripped by the admission filter, e.g. "add a guard" suggestions.
+6. Judgement calls: the baseline smells, one line each, listed only.
+7. Residual risk and uncovered ground: untested scenarios, anything needing an external environment to verify.
+8. Path to raw reports.
 
-**诚实性**（`references/taste.md` 第 5 节）：横向交易必须写成交易，不得写成"净升级/加固"；禁止用"更健壮""更安全""更完善"描述修复效果，要写清哪个输入的行为从什么变成了什么；本轮元代码增量超预算时把行数写出来。
+Keep it short: one line per item, no quoted material, no echoing subagent phrasing. P2 backlog and P3 each compress to a single-line list.
 
-所有报告为空且确实没有发现时，直接说"N 家模型均无发现"，并列出它们各自标注的最高风险点，不要编造 finding 来证明流程有价值。
+**Honesty** (`references/taste.md` section 5): a lateral trade is reported as a trade, never "net upgrade / hardened". Banned descriptions of fix effect: "more robust", "safer", "hardened", "more complete". Write which input's behavior changed from what to what. When the round's meta-code growth exceeds budget, state the line counts.
+
+When every report comes back empty and there is genuinely nothing: say "no findings from N models" and list each reviewer's top flagged risk. Do not invent findings to justify the process.

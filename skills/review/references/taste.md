@@ -1,56 +1,58 @@
-# 代码品味与收敛
+# Taste and convergence
 
-门禁最常见的失败模式不是漏审，是**自噬**：审查提出"这里防御不够" → 修复写出新的守卫 → 下一轮审查发现守卫有洞 → 再加一层守卫。每一轮都能拿出"真实 finding"，但 finding 的位置在往元代码迁移，产品风险已经不再下降。新代码的缺陷率大致恒定，所以只要每轮产出的是不平凡的新代码，这个循环就不收敛——它不是在逼近零，是在原地打转。
+The gate's most common failure mode is not missed defects, it is **self-feeding**: review says "not enough defense here", the fix adds a guard, next round finds a hole in the guard, another layer goes on. Every round produces "real findings", but the findings migrate into meta-code while product risk stops falling. New code has a roughly constant defect rate, so as long as each round produces non-trivial new code the loop does not converge. It is not approaching zero; it is spinning in place.
 
-本文件的规则对**审查者**和**主会话**同时生效，与安全性同等优先。
+The rules here bind **reviewers and the main session** equally, and rank equal with safety.
 
-## 1. 什么不构成 finding
+## 1. What does not count as a finding
 
-审查者只报**生产行为**下可达的缺陷。以下一律不报，或按上限降级：
+Reviewers report only defects reachable under **production behavior**. The following are not reported, or are capped:
 
-| 类型 | 处置 |
+| Type | Disposition |
 | --- | --- |
-| "建议增加校验 / 断言 / 防御"，但说不出当前可达的具体输入 | 不报 |
-| "如果将来有人写 X 就会 Y" —— 触发需要有人主动写新代码 | 不报（这是威胁模型，不是缺陷） |
-| "测试没有覆盖 X" 单独成条 | 不报，除非 X 是本次改动引入的 P0/P1 路径 |
-| 守卫 / lint 规则 / 脚本存在绕过方式 | 最高 P3，一行带过 |
-| 注释、命名、文档措辞 | 不报 |
-| 元代码（测试、守卫、lint、脚手架、CI 脚本）自身的缺陷 | **上限 P2**，一行，不阻塞交付 |
+| "add validation / assertion / defense" with no concrete currently-reachable input | not reported |
+| "if someone later writes X, Y happens" (the trigger needs someone to write new code) | not reported; that is a threat model, not a defect |
+| "no test covers X" as a standalone item | not reported, unless X is a P0/P1 path introduced by this change |
+| a guard / lint rule / script has a bypass | P3 max, one line |
+| comments, naming, doc wording | not reported |
+| anything tooling already enforces (lint, formatter, typecheck) | not reported |
+| baseline smells (the Fowler list in `assets/review-prompt.md`) | not findings; go to the `## Code quality (judgement calls)` section, max 5, listed only, never blocking |
+| defects in meta-code itself (tests, guards, lint, scaffolding, CI scripts) | **capped at P2**, one line, never blocks delivery |
 
-元代码出问题的后果是"守卫能力回归"，不是"产品出事"。把它当 P0/P1 处理，是这个循环的燃料。
+When meta-code breaks, the consequence is "guard capability regresses", not "the product breaks". Treating it as P0/P1 is fuel for the loop above.
 
-## 2. 修复的形状
+## 2. The shape of a fix
 
-修复优先级，从上到下：**删除 > 收窄判据 > 替换实现 > 新增代码**。新增是最后手段，不是第一反应。
+Fix priority, top to bottom: **delete > narrow the predicate > swap the implementation > add code**. Adding is the last resort, not the reflex.
 
-硬性刹车：
+Hard brakes:
 
-- 一条 finding 的修复需要新增 **> 30 行**，或需要引入新的抽象/新文件，**先停下来问**：是不是判据本身错了，或者这条 finding 根本不该修。
-- **同一个判据/守卫被打第 2 次补丁 → 判定为设计错误。** 要么删掉，要么换一个原理上成立的判据（例如从文本启发式换成真正的 import 图 / 类型系统 / 运行时断言），换不起就整块不做。**不允许第 3 次补丁。**
-- 修复只针对 confirmed 的问题。不要顺着报告做"既然改到这里了不如"的扩张。
+- A finding whose fix needs **>30 new lines**, or a new abstraction or file: **stop and ask** whether the criterion is wrong, or the finding should not be fixed at all.
+- **A predicate or guard patched a second time is a design error.** Delete it, or switch to a principle that actually holds (text heuristic to a real import graph / type system / runtime assertion). If no affordable principle exists, drop the whole thing. **No third patch.**
+- Fixes target confirmed problems only. No "while I am here" expansion along the report.
 
-## 3. 可核对的预算
+## 3. Budgets you can count
 
-不用"感觉"判断膨胀，用行数：
+Judge bloat by lines, not vibes:
 
-- **元代码 ≤ 被保护的生产代码**。400 行测试保护 107 行模块，是负债不是资产；删到线下。
-- **单文件注释 ≤ 代码行数的 1/4**。注释不是证据，且会骗人——写错的注释比没有注释更贵，它会把下一个人（包括下一轮审查者）引到错误的方向。禁止在测试或守卫里写多段论证式注释。
-- **每轮修复新增行数 ≤ confirmed P0/P1 条数 × 30**。超了说明在借修复之名扩张范围。
+- **Meta-code <= the production code it protects.** 400 lines of tests guarding a 107-line module is a liability, not an asset; cut below the line.
+- **Comments <= 1/4 of a file's lines.** Comments are not evidence, and they lie: a wrong comment costs more than none, it steers the next reader (including the next reviewer) wrong. No multi-paragraph argumentative comments in tests or guards.
+- **New lines per fix round <= confirmed P0/P1 count x 30.** Over that, the round is expanding scope under cover of fixing.
 
-超预算不是自动阻塞，但必须在汇报里写出数字，并说明为什么这次值得。
+Over-budget is not an automatic block, but the numbers go in the report with the reason it was worth it.
 
-## 4. 饱和判定：什么时候必须停
+## 4. Saturation: when you must stop
 
-以下任一命中，**本次任务的审查到此为止**，不再起新轮次：
+Any one of these ends review **for this task**:
 
-1. 本轮 finding 中，指向**上一轮新增代码**的占比 > 50%。
-2. 本轮 finding 中，指向**元代码**（守卫 / 测试 / 脚本）的占比 > 50%。
-3. 连续两轮没有出现新的**生产代码** P0/P1。
+1. >50% of this round's findings point at **code added last round**.
+2. >50% of this round's findings point at **meta-code** (guards / tests / scripts).
+3. Two consecutive rounds with no new **production-code** P0/P1.
 
-停止 = 剩余项压成一行一条的清单交给用户，由用户决定单开任务，主会话不再据此改代码。这不是"放弃质量"，是承认这一轮的边际收益已经低于它制造的新风险。
+Stopping means: leftovers become a one-line-each list for the user to schedule as separate work; the main session makes no further edits against them. This is not "giving up on quality"; it is admitting this round's marginal gain fell below the new risk it creates.
 
-## 5. 汇报诚实性
+## 5. Reporting honesty
 
-- 一次修复如果是"用 A 类缺陷换 B 类缺陷"（例如正则换 AST：换掉了同行尾随注释，换来了字符串里的 `//`），必须写成**横向交易**，列清换掉了什么、换来了什么。**不得写成"净升级 / 加固 / 更健壮"。** 错报为升级，本身就是下一轮的工作量来源。
-- 禁止用"更健壮""更安全""加固""更完善"这类无法核对的词描述修复效果。写清楚：**哪个输入的行为从什么变成了什么**。
-- 审查没有发现值得修的东西时，直说"本轮无生产代码缺陷"，并给出各审查者标注的最高风险点。不要为了证明流程有价值而把元代码问题包装成 finding。
+- A fix that swaps defect class A for defect class B (regex for AST: loses trailing comments, gains `//` inside strings) is reported as a **lateral trade**, listing what was lost and what was gained. **Never "net upgrade / hardened / more robust".** Misreporting a trade as an upgrade is itself a source of next round's work.
+- Banned words for fix effects: "more robust", "safer", "hardened", "more complete". Write **which input's behavior changed from what to what**.
+- When a review round finds nothing worth fixing, say "no production-code defects this round" and give each reviewer's top flagged risk. Do not dress meta-code problems as findings to prove the process earns its keep.

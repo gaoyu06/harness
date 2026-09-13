@@ -1,112 +1,112 @@
 ---
 name: review
-description: 代码审查，默认不执行。仅当改动复杂或重要时——多文件跨模块、新增模块/公开接口/数据结构，或触及认证、支付、权限、并发、迁移、部署等高风险面——在动手前问一次是否需要审查，并给出推荐强度（Self/Low/Medium/High/Heavy）。用户明确批准后，才用当前宿主的原生子代理在干净上下文里做对抗式 review。用户未批准、未回答或回答含糊，一律不审查。用户主动要求审查时同样走本 skill。
+description: "Code review gate, off by default. Ask once before changes that are complex or high-risk: multi-file cross-module work, new modules, public interfaces, data structures, or anything touching auth, payments, permissions, concurrency, migrations, or deploys. Offer a recommended strength (Self/Low/Medium/High/Heavy). Only after explicit approval, run adversarial review with the current host's isolated native subagents, inside a round budget. No answer, a vague answer, or refusal all mean ship without review. Also runs when the user asks for a review outright."
 metadata:
-  short-description: 重要改动前问一次要不要审；获批准后用原生子代理对抗审查，带轮次预算
+  short-description: Ask once whether to review important changes; on approval, adversarial review by isolated native subagents with a round budget
 ---
 
 # Review
 
-**默认不审查。** 只有两种情况执行：用户主动要求，或改动确实复杂重要、你按第 1 节问了一次且用户明确批准。
+**Default: no review.** It runs in exactly two cases: the user asks for it, or the change is complex enough that you asked once per section 1 and the user approved.
 
-问过之后，用户没有回答、回答含糊、或表示不用——**不审查，直接交付**。不要反复追问，不要擅自降格执行一个"轻量版"，也不要在汇报里暗示还欠一次审查。
+After asking: no answer, a vague answer, or "no" all mean **ship without review**. Do not ask again, do not run a quiet "light" version, do not hint in the delivery that a review is still owed.
 
-获得批准后才进入下面的流程：按选定强度用**当前宿主的原生子代理**审查并收敛。不要 `omp -p`，不要跑任何审查脚本，不要为了换厂商去调另一个产品的 CLI。
+Once approved, run the loop below with the current host's **native isolated subagents**. No `omp -p`, no review scripts, no calling another product's CLI to reach a different vendor.
 
-**审查是有成本的流程，不是越多越好。** 三条效率硬约束，与安全性同等优先：
+**Review is a costed process, not a free good.** Four hard constraints, ranked equal with safety:
 
-1. **有预算**：每档的审查轮次有上限（见 `references/strengths.md`）。达到上限仍有未决 P0/P1，停下来交给用户决策，不得自动加轮。
-2. **能并行就并行**：审查子代理与主会话的后续开发、测试、构建同时跑。禁止"等审查回来再干活"的串行等待。
-3. **缺陷要前移**：每轮 confirmed 的 P0/P1 必须沉淀成规则或回归测试（第 5 节）。同一类问题反复被审出来，说明门禁在替开发擦屁股，要修的是开发阶段而不是加审查。
-4. **不许自噬**：门禁的产出是"更少的生产缺陷"，不是"更多的守卫"。审查只认生产行为下可达的缺陷；元代码（测试、守卫、lint、脚本）自身的问题封顶 P2；修复默认走减法。判定与预算见 `references/taste.md`，**每轮收敛前必须跑一遍那里的饱和判定**。
+1. **Budgeted.** Each strength has a round cap (`references/strengths.md`). Hit the cap with open P0/P1 and stop: hand the decision to the user, never add rounds yourself.
+2. **Parallel.** Review subagents run alongside the main session's remaining development, tests, and builds. "Wait for review, then work" is forbidden.
+3. **Push detection forward.** Every confirmed P0/P1 becomes a regression test or a rule (section 5). If the same defect class keeps surfacing in review, the fix belongs in development, not in more review.
+4. **No self-feeding.** The gate's output is fewer production defects, not more guards. Reviewers report only defects reachable under production behavior; problems in meta-code (tests, guards, lint, scripts) cap at P2; fixes default to subtraction. The judgement rules and the saturation check live in `references/taste.md`; run the saturation check before every closeout.
 
-## 1. 什么时候问一次
+## 1. When to ask once
 
-只在下列情况提一句"要不要审查"。其余一律不提，做完直接交付。
+Ask "want a review?" only in the cases below. Everything else: finish and ship.
 
-### 值得问（不看改动大小）
+### Worth asking regardless of size
 
-触及以下任一高风险面，即使只改一行也值得问一句：认证鉴权、支付计费、权限与可见范围、并发与事务、缓存一致性、数据迁移/回填/删除、定时任务、部署发布、对外接口的兼容性。
+Any high-risk surface, even a one-line change: auth, payments and billing, permissions and visibility scopes, concurrency and transactions, cache coherence, data migration/backfill/deletion, scheduled jobs, deploy/release, compatibility of external interfaces.
 
-### 值得问（按规模）
+### Worth asking by size
 
-- 改动 ≥ 3 个文件**且跨模块**（同一模块内的多文件改动不算），或单文件 ≥ 150 行有效改动。
-- 新增模块、公开接口、数据库表/字段、迁移脚本、依赖。
-- 修改已有核心链路的行为。
+- >= 3 files **and** cross-module (multi-file inside one module does not count), or >= 150 effective lines in one file.
+- New module, public interface, database table/field, migration, dependency.
+- Changing the behavior of an existing core path.
 
-### 不问（直接做完，不要为流程而流程）
+### Do not ask
 
-文案、样式与展示层调整；日志与注释；typo；纯查询类问题；测试与脚手架代码；不涉及权限/密钥的配置项；纯新增的独立分支逻辑（不改既有链路）；同一模块内影响面清楚且有测试兜底的小改动。
+Copy, style, and display-layer tweaks; logs and comments; typos; read-only questions; tests and scaffolding; config that touches no permissions or secrets; purely additive branches that leave existing paths alone; small intra-module changes with test cover.
 
-**边界模糊时不问。** 宁可不审，也不要为流程而流程；更不要因为拿不准就抬档。
+**Ambiguous means do not ask.** Rather skip than run process for its own sake; never raise the tier because you are unsure.
 
-## 2. 怎么问，怎么定档
+## 2. How to ask, how to set the tier
 
-命中第 1 节时，在动手之前问一次，只问一次。选项：不审查 / Self / Low / Medium / High / Heavy，标出推荐档。
+When section 1 hits, ask once before starting. Once. Options: no review / Self / Low / Medium / High / Heavy, with your recommendation marked.
 
-| 改动性质 | 推荐 |
+| Change | Recommend |
 | --- | --- |
-| 触发边界模糊、单模块、有测试兜底 | Self（主会话按 checklist 自查，不起子代理） |
-| 局部功能，影响面清楚 | Low |
-| 跨模块，有一定回归面 | Medium |
-| 核心链路、数据结构变更、并发或事务、对外接口 | High |
-| 生产数据迁移、资金或权限、不可回滚操作、大规模重构 | Heavy |
+| Ambiguous trigger, single module, test cover | Self (main session walks the checklist, no subagents) |
+| Local feature, clear blast radius | Low |
+| Cross-module, some regression surface | Medium |
+| Core path, data-structure change, concurrency or transactions, external interface | High |
+| Production data migration, money or permissions, irreversible ops, large refactor | Heavy |
 
-**默认是不审查。** 用户不回答、回答含糊、或明确拒绝，一律按不审查执行，也不要在交付说明里写"建议补审"。
+**The default is no review.** Silence, vagueness, or refusal all mean skip, and the delivery does not get a "consider a follow-up review" note.
 
-用户已指定强度时按指定执行，不再追问，也不临时降级。开发中范围明显扩大（例如临时决定改表结构）时当场说明，并再问一次是否升档——同样是问，不是自行决定。
+If the user names a tier, run it as named: no re-asking, no quiet downgrade. If scope clearly grows mid-work (a table change appears, say), say so on the spot and ask once about raising the tier. Again: ask, do not decide.
 
-## 3. 开发中：分片并行，不要攒到最后
+## 3. During development: shard and parallelize, do not bank it for the end
 
-以下仅适用于已获批准审查的改动。单次改动能切成多个可独立冻结的单元时（例如"后端接口"和"前端接入"、或按模块切），**每完成一个单元就立刻起后台子代理审它，主会话继续做下一个单元**。审查延迟被开发时间吸收，而不是叠加在交付前面。
+Applies only to approved reviews. When a change splits into independently freezable units (backend API vs frontend wiring, or per module), **spawn a background subagent on each unit the moment it lands and keep building the next one**. Review latency gets absorbed by development time instead of stacking in front of delivery.
 
-- 每个分片按选定强度的"单分片配额"起审查者，不是整档配额重复 N 次。
-- 全部分片做完后，只对**跨分片接缝**（共享状态、调用顺序、事务边界、类型契约）再做一次收口审，范围只到接缝，不重审已审过的分片内部。
-- 改动无法切分（一个原子重构）时才走"开发完再整体审"。
+- Each shard gets the per-shard reviewer quota of the chosen tier, not the full quota N times.
+- After all shards, run one closeout review over only the **cross-shard seams**: shared state, call order, transaction boundaries, type contracts. Shard internals are not re-reviewed.
+- Only an unsplittable change (one atomic refactor) gets a single end-of-work review.
 
-## 4. 开发后：用原生子代理审查
+## 4. After development: review with native subagents
 
-前置条件：**用户已明确批准审查**；自测已过，diff 是最终形态。带着已知失败去审查只会浪费一轮。
+Preconditions: **the user approved review**; self-verification passes; the diff is final. Bringing known failures to review wastes a round.
 
-1. **准备材料**：改动范围、原始需求、验收条件、你自己知道的薄弱点。薄弱点必须交出去。
-2. **冻结 diff**：主会话自己取一份快照（规则见 `references/reviewers.md`）。所有审查者读同一份，含未跟踪的新文件。
-3. **填提示词**：用 `assets/review-prompt.md`，自己替换 `{{…}}`，不要写脚本。
-4. **按强度拉起**：数量、必查项、轮次上限见 `references/strengths.md`。调度方式见 `references/reviewers.md`。一次并行，子代理之间互不可见。
-5. **同时跑验证**：主会话在审查期间并行跑测试/构建/lint，不要先跑完再起审查。
-6. **回收**：每份报告必须有结尾小节 `## 未能验证的部分`，没有当无效。审查前后各看一次 `git status --porcelain`，不一致就告警。
+1. **Prepare the packet**: change scope, original requirement, acceptance criteria, the weak points you already know. The weak points must be handed over.
+2. **Freeze the diff**: the main session takes one snapshot (rules in `references/reviewers.md`). Every reviewer reads the same snapshot, untracked new files included.
+3. **Fill the prompt**: use `assets/review-prompt.md`, replace the `{{...}}` by hand, no scripts.
+4. **Spawn at the chosen strength**: reviewer count, must-checks, and round cap in `references/strengths.md`; dispatch per `references/reviewers.md`. One parallel batch; subagents cannot see each other.
+5. **Verify in parallel**: while reviewers run, the main session runs tests/build/lint. Do not finish verification first.
+6. **Collect**: every report must contain `## Requirement conformance` and `## Could not verify`; missing either is invalid. Take `git status --porcelain` before and after review; a difference is an alert.
 
-判断一律在主会话：是否触发、定哪档、finding 真伪、定级、裁决、汇报。子代理只出报告。
+All judgement stays in the main session: whether to trigger, the tier, finding truth, severity, adjudication, the report to the user. Subagents only write reports.
 
-宿主没有隔离子代理：停下来告诉用户，不要自己审自己，也不要去调 omp。
+Host has no isolated subagents: stop and tell the user. Do not self-review, do not call omp.
 
-## 5. 收敛与前移
+## 5. Converge and push forward
 
-拿到报告不要直接转述。先按 `references/taste.md` 第 1 节做准入过滤，再按 `references/triage.md` 逐条判真伪、定级 P0–P3、修复。
+Do not relay reports verbatim. Admission-filter per `references/taste.md` section 1, then per `references/triage.md` judge each finding, grade P0-P3, fix.
 
-硬性收口：
+Hard closeout rules:
 
-- **饱和即停**：本轮 finding 指向上一轮新增代码 > 50%、或指向元代码 > 50%、或连续两轮无新的生产代码 P0/P1 —— 三条命中任一条，本次任务的审查结束，剩余项列清单交用户，不再起新轮次。
-- **修复走减法**：删除 > 收窄判据 > 替换实现 > 新增代码。单条修复要新增 > 30 行或引入新抽象时先停下来质疑判据；同一个守卫被打第 2 次补丁即判定设计错误，删掉或换原理，不允许第 3 次补丁。
-- **不得把横向交易报成升级**：修复用 A 类缺陷换掉 B 类缺陷时如实写成交易；禁止"更健壮/加固/更完善"这类无法核对的措辞。
+- **Stop at saturation**: >50% of this round's findings point at code added last round, or >50% point at meta-code, or two consecutive rounds with no new production-code P0/P1. Any one ends review for this task: leftovers become a list for the user, no more rounds.
+- **Fixes subtract**: delete > narrow the predicate > swap implementation > add code. A single fix needing >30 new lines or a new abstraction means stop and question the finding. A guard patched twice is a design error: delete it or change the principle, no third patch.
+- **A lateral trade is not an upgrade**: a fix that swaps defect class A for class B is reported as a trade. Banned words: "more robust", "hardened", "more complete".
 
-- P0/P1 未修复、且未经用户同意接受时，不得声明"完成"。
-- **P2/P3 不阻塞交付**：P2 只在与本次需求验收直接相关时当轮修，其余记入 backlog 报给用户；P3 只列不改。
-- 报告结论与代码不符时以代码为准，在汇报里点明误报，不要为了显得审查有效而照单全收。
-- 复审只在 P0、或跨模块的 P1 之后强制，范围只到修复 diff；其余 P1 由主会话做代码级复核 + 回归测试，不再起一轮子代理。
-- **轮次用尽仍有未决 P0/P1**：停，把未决项、各自证据和你的判断交给用户，由用户决定加轮还是接受。
+- With unfixed P0/P1 the user has not agreed to accept, never claim "done".
+- **P2/P3 do not block**: P2 is fixed this round only when directly tied to acceptance, else it goes to a backlog listed for the user; P3 is listed, not fixed.
+- When a report contradicts the code, the code wins. Flag the false positive in the report rather than accepting it to make review look effective.
+- Mandatory re-review only after a P0 or a cross-module P1, scoped to the fix diff; other P1s get a main-session code-level re-check plus a regression test, no new subagent round.
+- **Round cap hit with open P0/P1**: stop. Give the user the open items, the evidence, and your judgement; the user decides more rounds or acceptance.
 
-**前移（这是让门禁越用越快的部分，不可省）**：每轮 confirmed 的 P0/P1，收尾时二选一或都做——
+**Push forward (what makes the gate cheaper over time; not optional)**: for each confirmed P0/P1, do one or both:
 
-- 补一条回归测试，让这类问题下次由测试而不是审查发现；
-- 或把它抽象成一行规则，追加到项目 `CLAUDE.md` / `AGENTS.md` 的"复发缺陷清单"，开发前先读。
+- add a regression test so this class is caught by tests next time, not by review;
+- or distill it into a one-line rule appended to the project's standing rules: `.harness/spec/standards.md` when the project carries `.harness/`, else the `CLAUDE.md` / `AGENTS.md` "recurring defects" list — read before development.
 
-同一类缺陷连续三轮不再出现，可以从清单移除。
+Three consecutive rounds without the class recurring: remove it from the list.
 
-## 6. 边界
+## 6. Boundaries
 
-- **未获用户明确批准，不得自行发起审查**，包括"顺手起一个子代理看看"。
-- 审查子代理一律只读：不改代码、不提交、不推分支、不装依赖。修复由主会话做。
-- 只针对本次改动引入的问题。既有问题只报告，不顺手改。
-- 单个子代理失败时记录原因，用剩余报告继续。
-- 跨厂商不是门禁的前提。宿主能选不同模型/厂商就选；不能就用多个隔离的同源子代理，并在结论里写明"未跨厂商"。不得为了凑厂商去调其他 CLI。
-- 审查产出不写入仓库、不进提交信息，不添加任何模型或工具署名。
+- **No review without explicit user approval**, including "spinning up a quick subagent to take a look".
+- Reviewer subagents are read-only: no edits, commits, pushes, or dependency installs. Fixes happen in the main session.
+- Findings cover only what this change introduced. Pre-existing issues get reported, not fixed in passing.
+- A failed subagent: log the reason, continue with the remaining reports.
+- Cross-vendor is not a precondition. If the host can pick different models or vendors, do; if not, run multiple isolated same-source subagents and write "same-source isolation, no cross-vendor" in the conclusion. Never call other CLIs to reach a vendor.
+- Review output is not written to the repo, does not enter commit messages, and carries no model or tool attribution.

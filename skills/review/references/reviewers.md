@@ -1,48 +1,50 @@
-# 审查者调度
+# Reviewer dispatch
 
-唯一入口：当前宿主的原生子代理。禁止 `omp -p`、禁止任何审查脚本、禁止为换厂商去调 `claude` / `codex` / `grok` / `cursor-agent` / `omp` CLI。
+Single entry point: the current host's native subagents. Banned: `omp -p`, any review script, and calling `claude` / `codex` / `grok` / `cursor-agent` / `omp` CLIs to reach a vendor.
 
-隔离消的是锚定（开发过程的推理）。换模型/换厂商消的是模型盲区。前者必须有；后者能做再做，做不到就写明。
+Isolation removes anchoring (your development reasoning). Model and vendor swaps remove model blind spots. The first is mandatory; the second is done when possible, declared when not.
 
-## 每家怎么起
+## Per host
 
-按你**此刻所在**的宿主选一行，不要跨产品：
+Pick the row for the host **you are in right now**; do not cross products:
 
-| 宿主 | 做法 |
+| Host | How |
 | --- | --- |
-| OMP / Pi | `task`，`agent: "reviewer"`。High/Heavy 一次 `tasks[]` 并行。有 model 参数才换模型。 |
-| Claude Code | 原生 Task / Agent，隔离上下文，只读。有 `model` 就换。不要 `ultrareview` 云端。 |
-| Cursor | 原生 Task / subagent，只读。 |
-| Codex | 原生隔离子代理或新线程，只读。 |
-| Grok | fork `reviewer` role/persona（`default_fork_context`）。`capability_mode` 收到只读；不要用把工具全禁掉的 plan 模式顶替审查。 |
+| OMP / Pi | `task`, `agent: "reviewer"`. High/Heavy: one parallel `tasks[]`. Swap models only if a model param exists. |
+| Claude Code | native Task / Agent, isolated context, read-only. Use `model` if available. No `ultrareview` cloud. |
+| Cursor | native Task / subagent, read-only. |
+| Codex | native isolated subagent or fresh thread, read-only. |
+| Grok | fork a `reviewer` role/persona (`default_fork_context`). `capability_mode` set to read-only; do not substitute an all-tools-off plan mode for review. |
 
-子代理必须：
+Every subagent must:
 
-- 空白上下文：不继承你的开发推理、计划、todo。
-- 不加载 `review` skill，防止递归。
-- 项目规则（`AGENTS.md` / `CLAUDE.md`）要读到，才能按仓库约定判断风格。
-- 只给冻结的 diff、文件清单、需求、验收、已知薄弱点、强度对应的必查项。
+- Start blank: none of your development reasoning, plans, or todos.
+- Not load the `review` skill (no recursion).
+- Read project rules (`AGENTS.md` / `CLAUDE.md`) so it can judge style by repo convention.
+- Receive only: the frozen diff, the file list, the requirement, acceptance criteria, your known weak points, and the must-checks for the chosen strength.
 
-没有隔离子代理：停。告诉用户本宿主做不了门禁，请豁免或换宿主。不要自己审自己，也不要去调 omp。
+No isolated subagents on this host: stop. Tell the user the gate cannot run here; ask for a waiver or a different host. Do not self-review, do not call omp.
 
-## 换模型
+## Model swaps
 
-审查模型档位不得低于开发模型。开发模型已是顶级档时，同档 + 隔离 + 对抗式提示即可。
+The review model's tier must not sit below the development model's. When the dev model is already top tier, same tier + isolation + an adversarial prompt is enough.
 
-能选模型：优先换一家。不能选：同源隔离，结论里写 `同源隔离，未跨厂商`。
+Model selectable: prefer a different vendor. Not selectable: same-source isolation, and write `same-source isolation, no cross-vendor` in the conclusion.
 
-## 主会话要做的机械步骤
+## Mechanical steps for the main session
 
-不要把这些写成脚本。每次审查现场做：
+Do not script these. Do them live each round:
 
-1. **冻结 diff**（所有审查者共用这一份）
-   - `uncommitted`（默认）：`git diff HEAD`，再把未跟踪文件补进去——`git ls-files --others --exclude-standard`，每个文件 `git diff --no-index -- /dev/null <file>`。`git diff HEAD` 不含新文件，新增模块最该审。
-   - `staged`：`git diff --cached`
-   - `branch`：对上游或 `origin/main` / `main` 取 `merge-base`，再 `git diff <merge-base>`
-   - 或直接使用用户给的 git diff 范围
-2. **填** `assets/review-prompt.md` 的 `{{REPO}}` `{{DIFF_PATH}}` `{{FILES_PATH}}` `{{STRENGTH}}` `{{FOCUS}}` `{{REQUIREMENT}}` `{{MAX_FINDINGS}}` `{{P3_RULE}}`（Low/Medium 填"不报 P3。"，High/Heavy 填"P3 单列一行，不展开。"）。diff 不大就内联进提示词；太大再写到 `$TMPDIR/review/`，不落仓库。
-3. **并行**拉起 N 个只读子代理，互不可见。**起完不要空等**：宿主支持后台子代理时把审查放后台，主会话同时跑测试/构建/lint，或继续做下一个分片（见 SKILL.md 第 3 节）。串行等待是这套流程最大的时间浪费，且不换来任何安全性。
-4. **校验**每份报告含 `## 未能验证的部分`。缺失 = 报告不完整，不计入有效数。只看"子代理成功返回"会把半截开场白当成通过。
-5. **工作区**：审查前后各取一次 `git status --porcelain`，不一致就告警。
-6. 有效报告数为 0：本次审查无效，不得声称已审。
-7. **不要重复起审查者**。同一份 diff 不因为"想再确认一下"而多跑一轮；轮次预算见 `references/strengths.md`。
+1. **Freeze the diff** (one copy shared by all reviewers)
+   - `uncommitted` (default): `git diff HEAD`, then add untracked files: `git ls-files --others --exclude-standard`, and per file `git diff --no-index -- /dev/null <file>`. `git diff HEAD` misses new files, and new modules are what most need review.
+   - `staged`: `git diff --cached`
+   - `branch`: `git diff <base>...HEAD` (three-dot, diffs against the merge-base)
+   - or use the diff range the user gave you
+   - Fail fast before dispatch: `git rev-parse` any user-supplied ref, and confirm the frozen diff is non-empty. A bad ref or empty diff fails here, not inside the subagents.
+   - For branch diffs, attach `git log <base>..HEAD --oneline` to the packet; reviewers get the commit list as intent context.
+2. **Fill** `assets/review-prompt.md`: `{{REPO}}` `{{DIFF_PATH}}` `{{FILES_PATH}}` `{{STRENGTH}}` `{{FOCUS}}` `{{REQUIREMENT}}` `{{MAX_FINDINGS}}` `{{P3_RULE}}` (Low/Medium fill "No P3s."; High/Heavy fill "P3s as a single line, unexpanded."). Inline a small diff into the prompt; write a large one to `$TMPDIR/review/`, never into the repo.
+3. **Spawn** N read-only subagents in parallel, blind to each other. **Do not idle after spawning**: if the host supports background subagents, review runs in the background while the main session runs tests/build/lint or builds the next shard (SKILL.md section 3). Serial waiting is this process's biggest time sink and buys no safety.
+4. **Validate** each report contains `## Requirement conformance` and `## Could not verify`. Missing either = incomplete = does not count. Checking only "did the subagent return" mistakes a truncated preamble for a pass.
+5. **Workspace**: take `git status --porcelain` before and after review; a difference is an alert.
+6. Zero valid reports: the review did not happen; never claim it did.
+7. **Never re-spawn reviewers.** The same diff does not get another round because you "want to double-check"; round budgets live in `references/strengths.md`.
