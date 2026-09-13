@@ -66,7 +66,7 @@ skill 写入时引用四个具名去向，映射集中定义在这里，不在�
 | 去向 | 有 `.harness/` | 无 `.harness/` |
 | --- | --- | --- |
 | 持久规则 | `spec/standards.md` | `AGENTS.md` / `CLAUDE.md` |
-| 词汇表 | `spec/context.md` | `CONTEXT.md` |
+| 词汇表 | `spec/glossary.md` | `GLOSSARY.md` |
 | 决策记录 | `notes/` | `docs/adr/` |
 | 会话产物 | `local/` | 不落盘 |
 

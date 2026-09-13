@@ -24,12 +24,13 @@ Harness engineering 实践仓库：收集 agent 开发中可复用的经验。
 
 ## 约定
 
-见 `.harness/spec/standards.md`。两条高频义务单独点名：
+见 `.harness/spec/standards.md`。高频义务单独点名：
 
 - 写或改 `skills/` 里的 skill：按 `skills/writing-for-agents/` 的方法执行
 - 中文编写的 skill：成稿后过 `skills/zh-check/`
+- 写 `README.md` 等门面文档：只写当前成立的稳定状态；改名、分叉、迁移这类变更说明归 commit message / note，不进正文
 
 ## References
 
-- [mattpocock/skills](https://github.com/mattpocock/skills) — Matt Pocock 的 skill 集，本地 clone 于 `~/dev/skills-mp`。参考点：user-invoked / model-invoked 二元划分、`grill` 追问原语、`CONTEXT.md` 共享语言、spec → tickets → implement 流水线
+- [mattpocock/skills](https://github.com/mattpocock/skills) — Matt Pocock 的 skill 集，本地 clone 于 `~/dev/skills-mp`。参考点：user-invoked / model-invoked 二元划分、`grill` 追问原语、共享语言词汇表、spec → tickets → implement 流水线
 - aicare 工作区（`~/dev/aicare`）— agent-notes 与 spec 语料模式来源

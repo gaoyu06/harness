@@ -1,4 +1,4 @@
-# context
+# glossary
 
 本仓库词汇表。
 

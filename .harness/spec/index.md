@@ -2,6 +2,6 @@
 
 | 做什么之前 | 读 |
 | --- | --- |
-| 改 `.harness/`、`harness/` | `harness/SPEC.md`、`spec/context.md` |
+| 改 `.harness/`、`harness/` | `harness/SPEC.md`、`spec/glossary.md` |
 | 新增、删除、修改、收录外部 skill | `spec/standards.md` |
 | commit、push | `spec/standards.md` |

@@ -35,12 +35,12 @@ The interview sharpens the domain model as it goes. Capture terms and decisions 
 
 ### Where things live
 
-In a project carrying `.harness/`: the glossary goes to `.harness/spec/context.md` (registered in `spec/index.md`), and decision records become notes in `.harness/notes/`. Otherwise:
+In a project carrying `.harness/`: the glossary goes to `.harness/spec/glossary.md` (registered in `spec/index.md`), and decision records become notes in `.harness/notes/`. Otherwise:
 
-- `CONTEXT.md` at the repo root is the glossary. If `CONTEXT-MAP.md` exists, the repo has multiple contexts and the map points to each one's `CONTEXT.md`.
+- `GLOSSARY.md` at the repo root is the glossary. If `CONTEXT-MAP.md` exists, the repo has multiple contexts and the map points to each one's `GLOSSARY.md`.
 - `docs/adr/` holds decision records. Create files lazily — only when there is something to write.
 
-`CONTEXT.md` / `context.md` is a glossary and nothing else: no implementation details, no spec, no scratch pad. Format: [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
+`GLOSSARY.md` / `glossary.md` is a glossary and nothing else: no implementation details, no spec, no scratch pad. Format: [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
 
 ### During the interview
 
