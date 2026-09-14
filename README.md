@@ -25,6 +25,7 @@
 | skill | 作用 |
 | --- | --- |
 | grill | 需求澄清：设计树逐轮访谈，词汇表与决策当场落盘 |
+| dev-plan | 开发规划：接 grill 的设计产物，难点调研、选型逐条辩论，产出架构、代码量与三笔账工期 |
 | frontend-design | UI 方向设计 + 硬约束：品牌色、禁编造内容、禁 emoji 图标 |
 | ponytail | 极简实现：能复用就不写、stdlib 优先、故意简化留 `ponytail:` 债务标记 |
 | diagnosing-bugs | 疑难 bug 与性能回退的诊断循环 |
