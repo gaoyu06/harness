@@ -8,6 +8,8 @@ license: Complete terms in LICENSE.txt
 
 Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard constraints section below was added and outranks every preference in the original guidance.
 
+Scope: shared visual-direction reference. When the page itself is the deliverable experience — concept-driven showcase pages, portfolios, Awwwards-style one-pagers — the `showcase-page` skill owns the end-to-end process and points back here for these rules.
+
 ## Hard constraints
 
 **Conformance**
