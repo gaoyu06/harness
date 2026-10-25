@@ -12,6 +12,13 @@ Scope: shared visual-direction reference. When the page itself is the deliverabl
 
 ## Hard constraints
 
+**Usability** — first in priority. When it conflicts with visual style, brand expression, or implementation convenience, usability wins.
+
+- Every layout optimizes for ease of operation and simplicity first: frequent actions in one click or one shortcut, sensible defaults in place of choices, undo in place of confirmation for reversible actions, one primary task and one filled primary action per view, advanced options disclosed on demand.
+- Design for System 1: a screen is understood at a glance, without reading. Gate every important screen and interaction with the **text-strip test** — remove all text, keep only shape, position, icons, and color — and the user must still tell what the screen is for, what can be acted on, which action is primary, what an action will do (irreversible ones above all), and the current state. A failing design gets redesigned, not more words.
+- Means: recurring actions keep fixed positions; buttons follow a three-level hierarchy (filled / outlined / text); important actions pair an icon with the label, irreversible ones always carry an icon, and each icon keeps one meaning; state is shown by shape (spinner, dot, check, cross) with color as a second channel; consequences show before acting (the affected object, a diff preview); an action looks and sits the same on desktop and mobile.
+- Text supplements and confirms what shape, position, and icons already say.
+
 **Conformance**
 
 - In an existing project, use its component library, layout patterns, and visual style. Do not introduce a new visual language without approval.
