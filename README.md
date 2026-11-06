@@ -28,12 +28,15 @@
 | --- | --- | --- | --- |
 | 澄清 | grill | 设计树逐轮追问，词汇表与决策当场落盘 | dev-plan |
 | 规划 | dev-plan | 难点调研、选型逐条辩论，产出架构、代码量与三笔账工期 | 界面转 frontend-design；实现走 ponytail |
+| 验证设计 | prototype | 一次性原型：逻辑做成单个 HTML，界面在同一页面切换几种方案 | 结论进决策记录，选定方案并入正式代码 |
 | 实现 | ponytail | 极简实现：能复用就不写、标准库优先，故意简化留 `ponytail:` 标记 | review 门禁；标记由 ponytail-debt 汇总 |
+| 实现 | tdd | 测试驱动：先写失败的测试，一次一个纵向切片，测试只放在确认过的边界上 | review 门禁 |
 | 排障 | diagnosing-bugs | 疑难 bug 与性能回退的诊断循环 | 回归测试；高风险修复走 review |
 | 审查 | review | 对抗式审查门禁：强度分级、隔离子代理、轮次预算 | P0/P1 前移为回归测试或持久规则 |
 | 审查 | ponytail-review | 只查过度设计，每个发现一行，支持改动与全仓两种范围 | 删减回主会话实现 |
 | 收尾 | ponytail-debt | 收拢 `ponytail:` 标记成债务台账 | — |
 | 收尾 | handoff | 当前会话压缩为交接文档（仅手动调用） | 下一个会话 |
+| 收尾 | retro | 会话回顾：提出改进 agent 工作环境的建议（仅手动调用） | 采纳的建议落到规则文件或 skill |
 
 ### 视觉
 
@@ -119,7 +122,7 @@ rm -rf /tmp/harness-src
 
 ## 致谢
 
-- `skills/grill`、`skills/review`、`skills/writing-for-agents`、`skills/diagnosing-bugs`、`skills/handoff` 参考或改写自 [mattpocock/skills](https://github.com/mattpocock/skills)（MIT）
+- `skills/grill`、`skills/review`、`skills/writing-for-agents`、`skills/diagnosing-bugs`、`skills/handoff`、`skills/tdd`、`skills/prototype`、`skills/retro` 参考或改写自 [mattpocock/skills](https://github.com/mattpocock/skills)（MIT）
 - `skills/frontend-design` 基于 Anthropic 的 frontend-design skill（Apache-2.0）
 - `skills/web-anim`：`gsap-core`、`gsap-timeline`、`gsap-scrolltrigger` 收录自 GSAP 官方 skill（MIT）；`algorithmic-art` 收录自 Anthropic 的 algorithmic-art skill（Apache-2.0）；`gsap-awwwards-website` 使用 [Eng0AI/gsap-awwwards-website-template](https://github.com/Eng0AI/gsap-awwwards-website-template) 模板
 

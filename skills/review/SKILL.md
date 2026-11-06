@@ -7,7 +7,7 @@ description: '代码审查：用户要求审查、检查、review 改动时调�
 
 ## 上下游
 
-- 前接：实现中或完成的改动，包括 `ponytail` 的实现和 `diagnosing-bugs` 的修复。
+- 前接：实现中或完成的改动，包括 `ponytail`、`tdd` 的实现和 `diagnosing-bugs` 的修复。
 - 分流：只查过度设计转 `ponytail-review`；带 `ponytail:` 标记的简化不算问题（`references/taste.md`）。
 - 写入：确认的 P0/P1 → 回归测试或持久规则（第 5 节）。
 

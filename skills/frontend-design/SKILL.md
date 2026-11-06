@@ -10,7 +10,7 @@ license: Complete terms in LICENSE.txt
 
 - 前接：需求，或 `dev-plan` 规划中的界面部分。
 - 后接：按定下的方向实现（`ponytail`）；动效实现读 `web-anim`；界面文案按 `writing-in-design.md`，中文成稿按 `zh-write`。
-- 分流：页面本身即作品的展示页（作品集、Awwwards 式单页）由 `showcase-page` 负责全流程，视觉细则回到本技能。
+- 分流：方向拿不准、需要几种方案对比时，先用 `prototype` 做界面原型；页面本身即作品的展示页（作品集、Awwwards 式单页）由 `showcase-page` 负责全流程，视觉细则回到本技能。
 - 写入：设计系统 → `spec/design-system.md`（见 Conformance）。
 
 Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard constraints section below was added and outranks every preference in the original guidance.
