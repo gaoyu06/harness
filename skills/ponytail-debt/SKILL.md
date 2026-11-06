@@ -1,12 +1,12 @@
 ---
 name: ponytail-debt
-description: >
-  Harvest every `ponytail:` comment in the codebase into a debt ledger, so the
-  deliberate shortcuts and deferrals ponytail leaves behind get tracked instead
-  of rotting into "later means never". Use when the user says "ponytail debt",
-  "/ponytail-debt", "what did ponytail defer", "list the shortcuts", "ponytail
-  ledger", or "what did we mark to do later". One-shot report, changes nothing.
+description: '简化债务台账：收集代码里所有 `ponytail:` 标记，列出各自的上限和升级条件，只读不改。用于："ponytail debt"、之前留了哪些简化、哪些标记了以后再做。'
 ---
+
+## 上下游
+
+- 前接：`ponytail` 留在代码里的 `ponytail:` 标记。
+- 写入：台账默认只在对话输出；用户要保存时写入会话产物（见 Boundaries）。
 
 Every deliberate ponytail shortcut is marked with a `ponytail:` comment naming
 its ceiling and upgrade path. This collects them into one ledger so a deferral
@@ -40,5 +40,6 @@ End with `<N> markers, <M> with no trigger.` Nothing found: `No ponytail: debt. 
 ## Boundaries
 
 Reads and reports only, changes nothing. To persist it, ask and it writes the
-ledger to a file (e.g. `PONYTAIL-DEBT.md`). One-shot. "stop ponytail-debt" or
+ledger to `.harness/local/ponytail-debt.md` when the project carries
+`.harness/`, else to `PONYTAIL-DEBT.md`. One-shot. "stop ponytail-debt" or
 "normal mode" to revert.

@@ -18,6 +18,7 @@ Reviewers report only defects reachable under **production behavior**. The follo
 | anything tooling already enforces (lint, formatter, typecheck) | not reported |
 | baseline smells (the Fowler list in `assets/review-prompt.md`) | not findings; go to the `## Code quality (judgement calls)` section, max 5, listed only, never blocking |
 | defects in meta-code itself (tests, guards, lint, scaffolding, CI scripts) | **capped at P2**, one line, never blocks delivery |
+| a deliberate simplification carrying a `ponytail:` comment (ceiling and upgrade path named) | not reported, unless this change's production path already exceeds the named ceiling |
 
 When meta-code breaks, the consequence is "guard capability regresses", not "the product breaks". Treating it as P0/P1 is fuel for the loop above.
 

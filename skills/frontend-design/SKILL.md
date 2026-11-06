@@ -1,14 +1,19 @@
 ---
 name: frontend-design
-description: Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.
+description: '界面设计：新建或修改页面、组件、样式时，写代码前调用；定视觉方向、排版、配色，执行可用性硬约束，避开模板化的默认风格。用于：加页面、做界面、改样式、搭设计系统、改版、"做得好看点"。展示页转 showcase-page；动效实现读 web-anim。'
 license: Complete terms in LICENSE.txt
 ---
 
 # Frontend Design
 
-Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard constraints section below was added and outranks every preference in the original guidance.
+## 上下游
 
-Scope: shared visual-direction reference. When the page itself is the deliverable experience — concept-driven showcase pages, portfolios, Awwwards-style one-pagers — the `showcase-page` skill owns the end-to-end process and points back here for these rules.
+- 前接：需求，或 `dev-plan` 规划中的界面部分。
+- 后接：按定下的方向实现（`ponytail`）；动效实现读 `web-anim`；界面文案按 `writing-in-design.md`，中文成稿按 `zh-write`。
+- 分流：页面本身即作品的展示页（作品集、Awwwards 式单页）由 `showcase-page` 负责全流程，视觉细则回到本技能。
+- 写入：设计系统 → `spec/design-system.md`（见 Conformance）。
+
+Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard constraints section below was added and outranks every preference in the original guidance.
 
 ## Hard constraints
 

@@ -1,7 +1,11 @@
 ---
 name: writing-for-agents
-description: Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md.
+description: '写给 agent 读的文档：skill、AGENTS.md、CLAUDE.md 及其指向的文档。用于：新建或修改 skill，改 AGENTS.md / CLAUDE.md。'
 ---
+
+## 上下游
+
+- 后接：中文写成的 skill 成稿后过 `zh-check`。
 
 Reference for writing any document an agent consumes: a skill, an `AGENTS.md` / `CLAUDE.md`, a doc reached by a pointer. The packaging differs; the writing does not: the same levers make each one predictable, since the agent takes the same _process_ every run rather than producing the same output.
 

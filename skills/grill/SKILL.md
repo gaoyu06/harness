@@ -1,9 +1,15 @@
 ---
 name: grill
-description: Relentlessly interview the user to sharpen a plan, design, or idea — and write down the glossary and decisions as they crystallize. Use when the user wants to stress-test thinking before building, or says "grill me".
+description: '追问澄清：动手前逐轮追问计划、设计或想法，直到双方理解一致，边问边记词汇表和决策。用于：想先把思路问透再做、"grill me"、拷问方案。问清后的开发规划转 dev-plan。'
 ---
 
 # Grill
+
+## 上下游
+
+- 前接：用户的计划、设计或想法。
+- 后接：设计收敛后转 `dev-plan` 做开发规划。
+- 写入：词汇表、决策记录（见下文 Where things live）。
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
 

@@ -1,15 +1,15 @@
 ---
 name: zh-check
-description: |
-  给一段已成稿的中文文本做全面问题检查。两遍制：脚本机械扫描禁用词库与
-  模式规则，模型再按规则库逐条复查脚本查不了的部分。适用于文档、文案、
-  脚本、README 等成稿质检。写作规范见 zh-write，对话措辞见 zh-talk。
+description: '中文成稿检查：脚本扫描禁用词库与模式规则，再按规则库逐条复查。用于：文档、文案、脚本、README 等成稿质检。写作转 zh-write，对话措辞转 zh-talk。'
 license: MIT
-metadata:
-  short-description: 中文文案检查：脚本扫描禁用词 + 模型逐条复查
 ---
 
 # 中文文案检查
+
+## 上下游
+
+- 前接：任何中文成稿；`writing-for-agents` 写的中文 skill 必过。
+- 后接：按问题清单回到 `zh-write` 改写。
 
 两遍制：机械抓得住的交给脚本，抓不住的按规则逐条复查。两遍都干净才算通过。
 

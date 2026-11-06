@@ -1,9 +1,14 @@
 ---
 name: diagnosing-bugs
-description: Diagnosis loop for hard bugs and performance regressions. Use when the user says "diagnose"/"debug this", or reports something broken/throwing/failing/slow.
+description: '排查 bug：测试失败、报错、结果不对、崩溃、变慢时，动手修之前调用。先建能稳定复现的反馈回路，再缩小范围、提假设、插桩，修复并加回归测试。用于："debug"、"diagnose"、测试挂了、查一下为什么不对。'
 ---
 
 # Diagnosing Bugs
+
+## 上下游
+
+- 前接：报错、失败、崩溃、变慢的报告。
+- 后接：修复附回归测试；修复跨模块或高风险时由 `review` 门禁决定是否审查。
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 

@@ -1,11 +1,15 @@
 ---
 name: review
-description: "Code review gate, off by default. Ask once before changes that are complex or high-risk: multi-file cross-module work, new modules, public interfaces, data structures, or anything touching auth, payments, permissions, concurrency, migrations, or deploys. Offer a recommended strength (Self/Low/Medium/High/Heavy). Only after explicit approval, run adversarial review with the current host's isolated native subagents, inside a round budget. No answer, a vague answer, or refusal all mean ship without review. Also runs when the user asks for a review outright."
-metadata:
-  short-description: Ask once whether to review important changes; on approval, adversarial review by isolated native subagents with a round budget
+description: '代码审查：用户要求审查、检查、review 改动时调用，按强度用隔离子代理做对抗式审查，有轮次预算。复杂或高风险的改动（跨模块多文件、新模块、公共接口、数据结构，或涉及鉴权、支付、权限、并发、迁移、部署）开工前问一次是否审查，给推荐强度（Self/Low/Medium/High/Heavy）；不答、含糊、拒绝都视为不审。只查过度设计转 ponytail-review。'
 ---
 
 # Review
+
+## 上下游
+
+- 前接：实现中或完成的改动，包括 `ponytail` 的实现和 `diagnosing-bugs` 的修复。
+- 分流：只查过度设计转 `ponytail-review`；带 `ponytail:` 标记的简化不算问题（`references/taste.md`）。
+- 写入：确认的 P0/P1 → 回归测试或持久规则（第 5 节）。
 
 **Default: no review.** It runs in exactly two cases: the user asks for it, or the change is complex enough that you asked once per section 1 and the user approved.
 
