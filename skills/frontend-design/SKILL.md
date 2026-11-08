@@ -23,6 +23,7 @@ Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard co
 - Design for System 1: a screen is understood at a glance, without reading. Gate every important screen and interaction with the **text-strip test** — remove all text, keep only shape, position, icons, and color — and the user must still tell what the screen is for, what can be acted on, which action is primary, what an action will do (irreversible ones above all), and the current state. A failing design gets redesigned, not more words.
 - Means: recurring actions keep fixed positions; buttons follow a three-level hierarchy (filled / outlined / text); important actions pair an icon with the label, irreversible ones always carry an icon, and each icon keeps one meaning; state is shown by shape (spinner, dot, check, cross) with color as a second channel; consequences show before acting (the affected object, a diff preview); an action looks and sits the same on desktop and mobile.
 - Text supplements and confirms what shape, position, and icons already say.
+- Interaction defaults: feedback first, then the operation (optimistic update, sync in the background); every press gets visible feedback; creating an item opens a dialog in place; options to pick beat fields to type; empty states are designed, not one line of text; one shared motion system for page changes and overlays; at most 3 kinds and 10 operable elements per view, the rest in a menu; internal codes and raw values (slugs, enum values) appear under readable names.
 
 **Conformance**
 
@@ -33,6 +34,7 @@ Based on Anthropic's `frontend-design` skill (Apache-2.0), modified: the Hard co
 **Model defaults**
 
 - A look that appears regardless of subject is a default, not a choice — never let it through. Each model family has its own: Anthropic models drift toward cream/yellow palettes and the Anthropic/Claude site aesthetic; Codex models toward sharp corners, outlined borders, oversized headings, and card-everything layouts; older generations had the purple-pink-blue gradient. Know your family's defaults and spend the freedom elsewhere.
+- This user's standing ban list, whatever the brand: star or sparkle "AI" icons; glowing dots, glows, and large-radius gradient buttons; blue-purple or purple-heavy palettes; serif display faces without a subject reason; text standing in for icons or logos; decorative bilingual micro-labels ("HOME BRAIN / 家庭大脑"); slogans and explanatory captions on the interface; unstyled native controls (select, scrollbar, date picker, context menu). The positive default: black and white with a small amount of functional color, quiet hairlines, hierarchy carried by type and spacing.
 
 **Color**
 
@@ -96,3 +98,7 @@ Try to do a lot of this planning and iteration in your thinking, and only show i
 Spend your boldness in one place. Let the signature element be the one memorable thing, keep everything around it quiet and disciplined, and cut any decoration that does not serve the brief. Not taking a risk can be a risk itself! Build to a quality floor without announcing it: responsive down to mobile, visible keyboard focus, reduced motion respected. Critique your own work as you build, taking screenshots if your environment supports it – a picture is worth 1000 tokens. Consider Chanel's advice: before leaving the house, take a look in the mirror and remove one accessory. Human creators have memory and always try to do something new, so if you have a space to quickly jot down notes about what you've tried, it can help you in future passes.
 
 When the work includes writing interface copy — labels, errors, empty states, button text — read [`writing-in-design.md`](writing-in-design.md).
+
+## Done means looked at
+
+UI work is done only after you have rendered it and looked. Screenshot every changed screen (Playwright, a headless browser, or the host's browser tool) in the states that matter: empty, loading, populated, narrow width, dark mode if supported. Check alignment, overflow, clipping, contrast, and the text-strip test; fix what you see, then screenshot again. The report carries the final screenshots. If nothing in the environment can render the page, say so in the report instead of claiming it looks right.

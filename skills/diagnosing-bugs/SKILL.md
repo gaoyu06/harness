@@ -132,12 +132,15 @@ If a correct seam exists:
 4. Watch it pass.
 5. Re-run the Phase 1 feedback loop against the original (un-minimised) scenario.
 
+The fix removes the cause. A retry, a keyword filter, a default value, or a swallowed exception that makes the symptom disappear is masking: if that is all you can do, say so and report the cause as still open.
+
 ## Phase 6: Cleanup
 
 Required before declaring done:
 
 - [ ] Original repro no longer reproduces (re-run the Phase 1 loop)
 - [ ] Regression test passes (or absence of seam is documented)
+- [ ] Same-class sweep: searched the codebase for other sites with the pattern that caused this bug (same misuse, same missing check), and fixed or listed each one
 - [ ] All `[DEBUG-...]` instrumentation removed (`grep` the prefix)
 - [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
 - [ ] The hypothesis that turned out correct is stated in the commit / PR message, so the next debugger learns
