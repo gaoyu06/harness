@@ -104,6 +104,12 @@ rm -rf /tmp/harness-src
 
 `~/.agents/skills/` 是总目录：本仓库的 skill 链接进去，Codex 直接读取；各 Claude 配置目录的 `skills/` 逐项链接到总目录，两边看到同一套 skill。`rules/global-rules.md` 链接为 `~/.codex/AGENTS.md` 和各 Claude 配置目录的 `CLAUDE.md`。可重复运行；已存在的真实文件不覆盖，失效链接会清掉。不在本仓库的 skill 放进总目录后重跑一次，Claude 也会链上。
 
+`hooks/` 下的 hook 合并写入各 Claude 配置目录的 `settings.json`，已有的配置和 hook 不动：
+
+| hook | 事件 | 作用 |
+| --- | --- | --- |
+| `long-session.py` | UserPromptSubmit | 会话中用户消息到 40、80 条时，提醒用 handoff 开新会话 |
+
 ### 装单个 skill
 
 复制对应目录到宿主 skill 目录（`~/.agents/skills/`、`~/.claude/skills/` 等）。
@@ -121,6 +127,7 @@ rm -rf /tmp/harness-src
 - `skills/` — 完整的 agent skills，每个子目录含 `SKILL.md` 与配套文件
 - `prompts/` — 一次性提示词片段，不固化为 skill
 - `rules/` — 全局规则文件（跨宿主适用的 rule、全局 CLAUDE.md 类）
+- `hooks/` — Claude Code hook 脚本，由 `install.sh` 写入 settings.json
 - `notes/` — 实践笔记
 - `snippets/` — 代码片段与配置样例
 

@@ -9,6 +9,7 @@ Harness engineering 实践仓库：收集 agent 开发中可复用的经验。
 - `skills/` — 完整的 agent skills，每个子目录含 `SKILL.md` 与配套文件
 - `prompts/` — 一次性提示词片段，不固化为 skill
 - `rules/` — 全局规则文件（跨宿主适用的 rule、全局 CLAUDE.md 类）
+- `hooks/` — Claude Code hook 脚本，由 `install.sh` 写入 settings.json
 - `notes/` — 实践笔记
 - `snippets/` — 代码片段与配置样例
 

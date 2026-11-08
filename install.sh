@@ -6,6 +6,7 @@
 # ~/.agents/skills 是总目录：本仓库的 skills 链接进去，Codex 直接读取它；
 # 每个 Claude 配置目录的 skills/ 逐项链接到总目录，两边看到同一套 skill。
 # 全局规则 rules/global-rules.md 链接为 ~/.codex/AGENTS.md 和各 Claude 目录的 CLAUDE.md。
+# hooks/ 下的 hook 合并写入各 Claude 目录的 settings.json，不动其他配置。
 # 可重复运行。已存在的真实文件或目录不覆盖，只提示；指向已删除 skill 的失效链接会清掉。
 set -euo pipefail
 
@@ -35,6 +36,24 @@ prune() { # 删除目录下的失效链接
   done
 }
 
+add_hook() { # add_hook <settings.json> <事件> <命令>：命令已存在则跳过
+  python3 - "$@" <<'PY'
+import json, os, sys
+path, event, command = sys.argv[1:4]
+data = json.load(open(path)) if os.path.exists(path) else {}
+groups = data.setdefault("hooks", {}).setdefault(event, [])
+if any(h.get("command") == command for g in groups for h in g.get("hooks", [])):
+    sys.exit(0)
+groups.append({"hooks": [{"type": "command", "command": command, "timeout": 10}]})
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+    f.write("\n")
+os.replace(tmp, path)
+print(f"新增  {path} {event} hook: {command}")
+PY
+}
+
 mkdir -p "$HUB"
 for dir in "$REPO"/skills/*/; do
   name="$(basename "$dir")"
@@ -53,6 +72,7 @@ for claude in "${CLAUDE_DIRS[@]}"; do
     link "$HUB/$(basename "$entry")" "$claude/skills/$(basename "$entry")"
   done
   prune "$claude/skills"
+  add_hook "$claude/settings.json" UserPromptSubmit "python3 $REPO/hooks/long-session.py"
 done
 
 echo "完成：总目录 ${HUB}，Claude 配置目录 ${CLAUDE_DIRS[*]}"
