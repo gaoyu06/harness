@@ -49,6 +49,7 @@
 | 设计 | frontend-design | 界面视觉方向与可用性硬约束，设计系统落盘 | 实现走 ponytail；动效读 web-anim |
 | 设计到实现 | showcase-page | 概念驱动的展示页全流程，视觉细则回到 frontend-design | 自审后交付 |
 | 实现 | web-anim | 动效配方库：GSAP、ScrollTrigger、落地页模板、p5.js 生成艺术 | — |
+| 审查 | ui-shots | 全界面截图：测试页挂真实组件、喂假数据，按场景清单批量截深浅两色，出总览页 | 逐张审查走 frontend-design |
 
 ### 中文写作（贯穿各阶段）
 
