@@ -181,7 +181,9 @@ async function shootOnce(tab, scene, theme, file) {
 	const [width, height] = (scene.size ?? '1440x900').split('x').map(Number);
 	tab.errors.length = 0;
 	await tab.call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: width < 600 });
-	await tab.call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+	// Reduced motion: the app's animations finish at once (the spec asks
+	// every app to honour it), so no picture lands mid-fade.
+	await tab.call('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }, { name: 'prefers-reduced-motion', value: 'reduce' }] });
 	const q = new URLSearchParams(scene.query ?? '');
 	q.set('h', scene.harness);
 	await tab.call('Page.navigate', { url: `${base}?${q}` });
